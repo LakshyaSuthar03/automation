@@ -3,10 +3,10 @@ const fs = require("fs");
 
 // Promise-based delay
 function delay(ms = 200) {
-  return new Promise(resolve => setTimeout(resolve, ms));
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-// Slow type function (40ms per character)
+// Slow type function
 async function slowType(page, selector, value = "") {
   value = String(value ?? "");
 
@@ -31,161 +31,152 @@ async function clickStarRating(page, nameAttr, count) {
     return;
   }
 
-  // Hover each star before the final click
   for (let i = 0; i <= index; i++) {
-    const star = stars[i];
-
-    const box = await star.boundingBox();
+    const box = await stars[i].boundingBox();
     if (!box) continue;
 
-    await page.mouse.move(
-      box.x + box.width / 2,
-      box.y + box.height / 2
-    );
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
 
     await delay(150);
   }
 
-  // Now click the final star
   await stars[index].click();
   await delay(300);
 }
 
+// Read review data
+const reviews = JSON.parse(fs.readFileSync("/home/lakshya/work/automation/zollege/reviews.json", "utf8"));
+
 (async () => {
-  const data = JSON.parse(fs.readFileSync("./reviews.json"));
+  for (let i = 0; i < reviews.length; i++) {
+    const browser = await puppeteer.launch({
+      headless: false,
+      slowMo: 1,
+      defaultViewport: null,
+    });
 
-  const browser = await puppeteer.launch({ headless: false });
-  const page = await browser.newPage();
+    const data = reviews[i];
+    const page = await browser.newPage();
 
-  await page.goto("https://zollege.in/write-review", {
-    waitUntil: "networkidle2",
-  });
-  await delay(500);
+    console.log(`\nStarting review submission ${i + 1} of ${reviews.length}`);
 
-  // --------------------------
-  // PERSONAL DETAILS
-  // --------------------------
-  await slowType(page, '[name="name"]', data.name);
-  await delay();
-  await slowType(page, '[name="mobile"]', data.mobile);
-  await delay();
-  await slowType(page, '[name="email"]', data.email);
-  await delay();
+    try {
+      await page.goto(`https://zollege.in/write-review?referral_code=${data.referralcode}`, {
+        waitUntil: "networkidle2",
+      });
 
-  await page.click(`[name="gender"][value="${data.gender}"]`);
-  await delay(300);
+      await delay(800);
 
-  // --------------------------
-  // COLLEGE / COURSE FIELDS
-  // --------------------------
-  await slowType(page, "#college_name", data.collegename);
-  await delay(1000);
-  await page.keyboard.press("Enter");
-  await delay(500);
+      // --------------------------
+      // PERSONAL DETAILS
+      // --------------------------
+      await slowType(page, '[name="name"]', data.name);
+      await slowType(page, '[name="mobile"]', data.mobile);
+      await slowType(page, '[name="email"]', data.email);
 
-  await slowType(page, "#course_name", data.coursename);
-  await delay(1000);
-  await page.keyboard.press("Enter");
-  await delay(500);
+      await page.click(`#${data.gender}`);
+      await delay(200);
 
-  await slowType(page, "#enrollment_year", data.enrollmentyear);
-  await delay(500);
-  await page.keyboard.press("Enter");
-  await delay();
+      // --------------------------
+      // COLLEGE / COURSE FIELDS
+      // --------------------------
+      await slowType(page, "#college_name", data.collegename);
+      await delay(1000);
+      await page.keyboard.press("Enter");
 
-  await slowType(page, "#quota_select", data.quotaselect);
-  await delay(500);
-  await page.keyboard.press("Enter");
-  await delay();
+      await slowType(page, "#course_name", data.coursename);
+      await delay(1000);
+      await page.keyboard.press("Enter");
 
-  await slowType(page, "#qualification_12th_board", data.qualification12thboard);
-  await delay(500);
-  await page.keyboard.press("Enter");
+      await slowType(page, "#enrollment_year", data.enrollmentyear);
+      await page.keyboard.press("Enter");
 
-  await slowType(page, '[name="qualification_12th_percent"]', data.qualification12thpercent);
-  await slowType(page, '[name="qualification_grad_degree_percent"]', data.qualificationgraddegreepercent);
+      await slowType(page, "#quota_select", data.quotaselect);
+      await page.keyboard.press("Enter");
 
-  await slowType(page, "#course_slug1", data.courseslug1);
-  await delay(500);
-  await page.keyboard.press("Enter");
+      await slowType(page, "#qualification_12th_board", data.qualification12thboard);
+      await page.keyboard.press("Enter");
 
-  await slowType(page, '[name="class_size"]', data.classsize);
+      await slowType(page, '[name="qualification_12th_percent"]', data.qualification12thpercent);
+      await slowType(page, '[name="qualification_grad_degree_percent"]', data.qualificationgraddegreepercent);
 
-  // --------------------------
-  // FEES / SCHOLARSHIP
-  // --------------------------
-  await slowType(page, '[name="program_fee"]', data.programfee);
-  await slowType(page, '[name="scholarship_review"]', data.scholarshipreview);
+      await slowType(page, "#course_slug1", data.courseslug1);
+      await page.keyboard.press("Enter");
 
-  await slowType(page, '[name="did_opt"]', data.didopt);
+      await slowType(page, '[name="class_size"]', data.classsize);
 
-  // --------------------------
-  // COURSE REVIEW
-  // --------------------------
-  await slowType(page, '[name="course_info"]', data.courseinfo);
+      // --------------------------
+      // FEES / SCHOLARSHIP
+      // --------------------------
+      await slowType(page, '[name="program_fee"]', data.programfee);
+      await slowType(page, '[name="scholarship_review"]', data.scholarshipreview);
+      await slowType(page, '[name="did_opt"]', data.didopt);
 
-  // --------------------------
-  // CAMPUS
-  // --------------------------
-  await slowType(page, '[name="campus"]', data.campus);
+      // --------------------------
+      // COURSE REVIEW
+      // --------------------------
+      await slowType(page, '[name="course_info"]', data.courseinfo);
 
-  // --------------------------
-  // HOSTEL
-  // --------------------------
-  await slowType(page, '[name="hostel_review"]', data.hostelreview);
-  await slowType(page, '[name="hostel_fee"]', data.hostelfee);
+      // --------------------------
+      // CAMPUS
+      // --------------------------
+      await slowType(page, '[name="campus"]', data.campus);
 
-  // --------------------------
-  // PLACEMENT
-  // --------------------------
-  await slowType(page, '[name="campus_placement"]', data.campusplacement);
+      // --------------------------
+      // HOSTEL
+      // --------------------------
+      await slowType(page, '[name="hostel_review"]', data.hostelreview);
+      await slowType(page, '[name="hostel_fee"]', data.hostelfee);
 
-  // --------------------------
-  // INTERNSHIP
-  // --------------------------
-  await slowType(page, '[name="internship"]', data.internship);
+      // --------------------------
+      // PLACEMENT & INTERNSHIP
+      // --------------------------
+      await slowType(page, '[name="campus_placement"]', data.campusplacement);
+      await slowType(page, '[name="internship"]', data.internship);
+      await slowType(page, '[name="average_placement"]', data.averageplacement);
 
-  await slowType(page, '[name="average_placement"]', data.averageplacement);
-  await slowType(page, '[name="review_title"]', data.reviewtitle);
+      await slowType(page, '[name="review_title"]', data.reviewtitle);
 
-  // --------------------------
-  // LIKES / DISLIKES
-  // --------------------------
-  await slowType(page, '[name="likes_field[0].pos_sentences"]', data.likesfield0possentences);
-  await slowType(page, '[name="likes_field[1].pos_sentences"]', data.likesfield1possentences);
-  await slowType(page, '[name="dislikes_field[0].neg_sentences"]', data.dislikesfield0negsentences);
-  await slowType(page, '[name="dislikes_field[1].neg_sentences"]', data.dislikesfield1negsentences);
+      // --------------------------
+      // LIKES / DISLIKES
+      // --------------------------
+      await slowType(page, '[name="likes_field[0].pos_sentences"]', data.likesfield0possentences);
+      await slowType(page, '[name="likes_field[1].pos_sentences"]', data.likesfield1possentences);
+      await slowType(page, '[name="dislikes_field[0].neg_sentences"]', data.dislikesfield0negsentences);
+      await slowType(page, '[name="dislikes_field[1].neg_sentences"]', data.dislikesfield1negsentences);
 
-  // --------------------------
-  // PAYMENT / SOCIAL
-  // --------------------------
-  await slowType(page, '[name="payment_content"]', data.paymentcontent);
-  await slowType(page, '[name="linkedin_profile"]', data.linkedinprofile);
-  await slowType(page, '[name="referral_code"]', data.referralcode);
-  await slowType(page, '[name="upload_doc_type"]', data.referralcode);
+      // --------------------------
+      // PAYMENT / SOCIAL
+      // --------------------------
+      await slowType(page, '[name="payment_content"]', data.paymentcontent);
+      await slowType(page, '[name="linkedin_profile"]', data.linkedinprofile);
+      await slowType(page, '[name="referral_code"]', data.referralcode);
+      await slowType(page, '[name="upload_doc_type"]', data.referralcode);
 
-    // --------------------------
+      await clickStarRating(page, "scholarship_rating", Number(data.scholarshiprating));
+      await clickStarRating(page, "college_rating", Number(data.collegerating));
+      await clickStarRating(page, "course_rating", Number(data.courserating));
+      await clickStarRating(page, "campus_rating", Number(data.campusrating));
+      await clickStarRating(page, "hostel_rating", Number(data.hostelrating));
+      await clickStarRating(page, "placement_rating", Number(data.placementrating));
+      await clickStarRating(page, "internship_rating", Number(data.internshiprating));
 
-  console.log("⏳ Waiting 3 seconds before clicking rating stars...");
-  await delay(3000);
+      await delay(3000);
 
-  await clickStarRating(page, "scholarship_rating", Number(data.scholarshiprating));
-  await clickStarRating(page, "college_rating", Number(data.collegerating));
-  await clickStarRating(page, "course_rating", Number(data.courserating));
-  await clickStarRating(page, "campus_rating", Number(data.campusrating));
-  await clickStarRating(page, "hostel_rating", Number(data.hostelrating));
-  await clickStarRating(page, "placement_rating", Number(data.placementrating));
-  await clickStarRating(page, "internship_rating", Number(data.internshiprating));
+      // SUBMIT (uncomment when fully tested)
+      // await page.click('button[type="submit"]');
+      // await page.waitForNavigation({ waitUntil: "networkidle2" });
 
-  console.log("All stars applied successfully!");
+      console.log(`Review ${i + 1} completed\n`);
+    } catch (error) {
+      console.error(`Error in review ${i + 1}:`, error.message);
+    }
 
-  // WAIT before submit
-  console.log("Waiting 5 seconds before final submit...");
-  await delay(5000);
+    // await page.close();
+    // await browser.close();
+    // await delay(3000); // gap between submissions
+  }
 
-  // Submit (uncomment when ready)
-  // await page.click('button[type="submit"]');
-  // await page.waitForNavigation({ waitUntil: "networkidle2" });
+  console.log("All reviews processed");
 
-  // await browser.close();
 })();
