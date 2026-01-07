@@ -4,9 +4,9 @@ async function tryOtp(otp) {
 
   const body = new URLSearchParams({
     otp_sent_on: 'phone',
-    phone: '8546898754',
-    email: 'anurag@okyre.com',
-    name: 'Anurag',
+    phone: '9658742589',
+    email: 'aryanparikh@okyre.com',
+    name: 'Aryan Parikh',
     country_code: '91',
     is_mobile: 'false',
     otp_form_source: 'login',
